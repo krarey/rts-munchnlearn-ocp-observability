@@ -1,0 +1,102 @@
+global:
+  enabled: true
+  tlsDisable: false
+  openshift: true
+  serverTelemetry:
+    prometheusOperator: false
+injector:
+  enabled: false
+server:
+  enabled: true
+  image:
+    repository: "registry.connect.redhat.com/hashicorp/vault"
+    tag: "1.18.3-ubi"
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 250m
+    limits:
+      memory: 512Mi
+  authDelegator:
+    enabled: false
+  extraEnvironmentVars:
+    VAULT_CACERT: /vault/userconfig/vault-ca/ca.crt
+  volumes:
+    - name: vault-tls
+      secret:
+        secretName: vault-tls
+        defaultMode: 0o440
+    - name: vault-ca
+      configMap:
+        name: vault-ca
+  volumeMounts:
+    - mountPath: /vault/userconfig/vault-tls
+      name: vault-tls
+      readOnly: true
+    - mountPath: /vault/userconfig/vault-ca
+      name: vault-ca
+      readOnly: true
+  affinity: null
+  dataStorage:
+    enabled: true
+    size: 2Gi
+    mountPath: "/vault/data"
+    storageClass: gp3-csi
+    accessMode: ReadWriteOnce
+  standalone:
+    enabled: false
+  ha:
+    enabled: true
+    replicas: 3
+    raft:
+      enabled: true
+      config: |
+        ui = true
+
+        listener "tcp" {
+          address         = "[::]:8200"
+          cluster_address = "[::]:8201"
+          tls_cert_file   = "/vault/userconfig/vault-tls/tls.crt"
+          tls_key_file    = "/vault/userconfig/vault-tls/tls.key"
+
+          # Enable unauthenticated metrics access (necessary for Prometheus Operator)
+          telemetry {
+            unauthenticated_metrics_access = "true"
+          }
+        }
+
+        storage "raft" {
+          path = "/vault/data"
+          retry_join {
+            auto_join             = "provider=k8s namespace=\"{{ .Release.Namespace }}\" label_selector=\"app.kubernetes.io/name=vault,component=server\""
+            leader_tls_servername = "vault.vault.svc.cluster.local"
+            leader_ca_cert_file   = "/vault/userconfig/vault-ca/ca.crt"
+          } 
+        }
+
+        service_registration "kubernetes" {}
+
+        telemetry {
+          prometheus_retention_time = "30s"
+          disable_hostname = true
+        }
+serverTelemetry:
+  serviceMonitor:
+    enabled: false
+  prometheusRules:
+      enabled: true
+      rules:
+        - alert: vault-HighResponseTime
+          annotations:
+            message: The response time of Vault is over 500ms on average over the last 5 minutes.
+          expr: vault_core_handle_request{quantile="0.5", namespace="mynamespace"} > 500
+          for: 5m
+          labels:
+            severity: warning
+        - alert: vault-HighResponseTime
+          annotations:
+            message: The response time of Vault is over 1s on average over the last 5 minutes.
+          expr: vault_core_handle_request{quantile="0.5", namespace="mynamespace"} > 1000
+          for: 5m
+          labels:
+            severity: critical

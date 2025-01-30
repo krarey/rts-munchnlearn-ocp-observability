@@ -1,0 +1,30 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: vault
+  namespace: vault
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: vault
+      app.kubernetes.io/instance: vault # Helm release name
+      vault-internal: "true" # Retrieve all endpoints for the vault-internal headless service
+  endpoints:
+    - port: https
+      interval: 30s
+      scrapeTimeout: 10s
+      scheme: https
+      path: /v1/sys/metrics
+      params:
+        format:
+        - prometheus
+      tlsConfig:
+        ca:
+          configMap:
+            name: vault-ca
+            key: ca.crt
+        serverName: vault.vault.svc.cluster.local
+  namespaceSelector:
+    matchNames:
+      - vault

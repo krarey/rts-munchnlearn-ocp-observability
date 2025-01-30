@@ -1,0 +1,26 @@
+apiVersion: app.terraform.io/v1alpha2
+kind: AgentPool
+metadata:
+  name: monitoring-demo
+  namespace: hcp-terraform-operator
+spec:
+  organization: krarey
+  token:
+    secretKeyRef:
+      name: tfc-token-krarey
+      key: token
+  name: monitoring-demo
+  agentTokens:
+    - name: token
+  agentDeployment:
+    replicas: 1
+    spec:
+      containers:
+        - name: tfc-agent
+          image: hashicorp/tfc-agent:1.17
+          env:
+            - name: TFC_AGENT_OTLP_ADDRESS
+              value: otel-collector.observability:4317
+          resources:
+            requests:
+              memory: 256M
