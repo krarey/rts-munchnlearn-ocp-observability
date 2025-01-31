@@ -34,7 +34,7 @@ data:
 
 After enabling this flag, a dedicated instance of the Prometheus Operator will be deployed to the `openshift-user-workload-monitoring` project. This operator, in turn, will deploy dedicated instances of Prometheus and Thanos, and watch user-managed projects for `ServiceMonitor`, `PodMonitor`, and `PrometheusMonitor` resources.
 
-> [!WARNING] Persistent Metrics Storage
+> [!WARNING]
 > By default, this will only store metrics from user-defined projects in ephemeral storage. To protect metrics and alerting state from data loss, the administrator responsible for enabling user workload monitoring should also [configure a persistent volume](https://docs.redhat.com/en/documentation/openshift_container_platform/4.17/html/monitoring/configuring-the-monitoring-stack#configuring-persistent-storage_configuring-the-monitoring-stack) or configure the monitoring stack to [push metrics to a remote system](https://docs.redhat.com/en/documentation/openshift_container_platform/4.17/html/monitoring/configuring-the-monitoring-stack#configuring-remote-write-storage_configuring-the-monitoring-stack) for long-term storage.
 
 ### Grant user permissions
@@ -77,7 +77,7 @@ server:
         }
 ```
 
-> [!NOTE] Partial Example
+> [!NOTE]
 > This example has been heavily cut down for clarity. Please reference the complete [sample values.yaml overrides](./reference/values-vault.yaml) included with this repository for more detail.
 
 ### Service Monitor
