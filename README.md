@@ -2,8 +2,6 @@
 
 ## OpenShift Configuration
 
-Intro intro intro
-
 ### OpenShift Local
 
 If using OpenShift Local, the monitoring operator is not enabled by default. Enable it before running `crc start`.
